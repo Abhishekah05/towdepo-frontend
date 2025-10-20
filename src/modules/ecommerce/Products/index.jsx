@@ -5,7 +5,6 @@ import ProductsSidebar from "./ProductsSidebar";
 import ProductListing from "./ProductListing";
 import { useGetProductsQuery } from "../../../@crema/Slices/productsSlice";
 
-
 export const VIEW_TYPE = {
   GRID: "grid",
   LIST: "list",
@@ -25,11 +24,13 @@ const Products = (value) => {
     color: [],
     rating: [],
     categories: [],
+    stores: [],
     price: [0, maxMrp],
     bulkDiscounts: [],
   });
 
   const [viewType, setViewType] = useState(VIEW_TYPE.GRID);
+  
   useEffect(() => {
     if (maxMrp > 0 && filterData.price[1] !== maxMrp) {
       setFilterData(prev => ({
@@ -43,11 +44,20 @@ const Products = (value) => {
   return (
     <AppsContainer
       title={messages["sidebar.ecommerce.products"]}
-      sidebarContent={<ProductsSidebar maxValue={maxMrp} filterData={filterData} setFilterData={setFilterData} />}
-      
+      sidebarContent={
+        <ProductsSidebar 
+          maxValue={maxMrp} 
+          filterData={filterData} 
+          setFilterData={setFilterData} 
+        />
+      }
     >
-      <ProductListing filterData={filterData} viewType={viewType} setViewType={setViewType}   />
-  
+      <ProductListing 
+        filterData={filterData} 
+        viewType={viewType} 
+        setViewType={setViewType} 
+        setFilterData={setFilterData}
+      />
     </AppsContainer>
   );
 };

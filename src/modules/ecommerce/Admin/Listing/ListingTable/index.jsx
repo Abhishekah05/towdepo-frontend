@@ -8,7 +8,7 @@ import TableItem from './TableItem';
 import AppTableContainer from '@crema/components/AppTableContainer';
 import AppLoader from '@crema/components/AppLoader';
 
-const ProductTable = ({ productData, loading, handleDeleteClick }) => {
+const ProductTable = ({ productData,locations, loading, handleDeleteClick }) => {
   return (
     <AppTableContainer>
       {loading ? (
@@ -21,7 +21,7 @@ const ProductTable = ({ productData, loading, handleDeleteClick }) => {
           <TableBody>
             {productData && productData.length > 0 ? (
               productData.map((data) => (
-                <TableItem data={data} key={data.id} handleDeleteClick={handleDeleteClick} />
+                <TableItem data={data} key={data.id} locations={locations} handleDeleteClick={handleDeleteClick} />
               ))
             ) : (
               <tr>

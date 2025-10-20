@@ -129,25 +129,111 @@ const WishlistButton = () => {
   );
 };
 
+// Function to get location name from coordinates using reverse geocoding
+// const getLocationName = async (latitude, longitude) => {
+//   try {
+//     const response = await fetch(
+//       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+//     );
+    
+//     if (!response.ok) {
+//       throw new Error('Failed to fetch location data');
+//     }
+    
+//     const data = await response.json();
+    
+//     if (data && data.address) {
+//       // Try to get a readable address in this order of preference
+//       const address = data.address;
+      
+//       if (address.road && address.city) {
+//         return `${address.road}, ${address.city}`;
+//       } else if (address.suburb && address.city) {
+//         return `${address.suburb}, ${address.city}`;
+//       } else if (address.city) {
+//         return address.city;
+//       } else if (address.town) {
+//         return address.town;
+//       } else if (address.village) {
+//         return address.village;
+//       } else if (address.county) {
+//         return address.county;
+//       } else if (address.state) {
+//         return address.state;
+//       } else if (data.display_name) {
+//         // Fallback to full display name
+//         return data.display_name.split(',')[0]; // Get first part of address
+//       }
+//     }
+    
+//     // Final fallback
+//     return 'Location detected';
+//   } catch (error) {
+//     console.error('Error fetching location name:', error);
+//     // Fallback to a simple message
+//     return 'Your location';
+//   }
+// };
 
 export const HeaderIndicators = () => {
   const [accountAnchorEl, setAccountAnchorEl] = useState(null);
   const [wishlistAnchorEl, setWishlistAnchorEl] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationName, setLocationName] = useState('');
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const { logout } = useAuthMethod();
   const { user } = useAuthUser();
   const navigate = useNavigate();
   const accountButtonRef = useRef(null);
 
+  // Load user location from localStorage and get location name
+  useEffect(() => {
+    const loadUserLocation = async () => {
+      const userLocationStr = localStorage.getItem('userLocation');
+      if (userLocationStr) {
+        try {
+          const location = JSON.parse(userLocationStr);
+          setUserLocation(location);
+          setIsLoadingLocation(true);
+          
+          // Get location name from coordinates using reverse geocoding
+          const name = await getLocationName(location.latitude, location.longitude);
+          setLocationName(name);
+        } catch (error) {
+          console.error('Error parsing user location:', error);
+          setLocationName('Your location');
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      }
+    };
+
+    loadUserLocation();
+
+    // Optional: Listen for storage changes to update location in real-time
+    const handleStorageChange = (e) => {
+      if (e.key === 'userLocation') {
+        loadUserLocation();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   const handleAccountClick = (event) => {
     setAccountAnchorEl(accountAnchorEl ? null : accountButtonRef.current);
   };
-
-
 
   const handleWishlistClick = () => {
     // Navigate to the wishlist page when wishlist icon is clicked
     navigate('/wishlist');
   };
+  
   const handleWishlistClose = () => {
     setWishlistAnchorEl(null); // Close wishlist popover
   };
@@ -161,32 +247,6 @@ export const HeaderIndicators = () => {
   return (
     <div className="header__indicators">
       {/* Wishlist */}
-      {/* <div className="indicator">
-        <a href="#" className="indicator__button">
-          <span className="indicator__icon">
-            <svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-              <path d="M23,4c3.9,0,7,3.1,7,7c0,6.3-11.4,15.9-14,16.9C13.4,26.9,2,17.3,2,11c0-3.9,3.1-7,7-7c2.1,0,4.1,1,5.4,2.6l1.6,2l1.6-2 C18.9,5,20.9,4,23,4 M23,2c-2.8,0-5.4,1.3-7,3.4C14.4,3.3,11.8,2,9,2c-5,0-9,4-9,9c0,8,14,19,16,19s16-11,16-19C32,6,28,2,23,2L23,2z"></path>
-            </svg>
-          </span>
-        </a>
-      </div>
-
-      <Popover
-        id={idWishlist}
-        open={openWishlist}
-        anchorEl={wishlistAnchorEl}
-        onClose={handleWishlistClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <DropWishlist />
-      </Popover> */}
       <WishlistButton/>
       <BasketButton />
 
@@ -199,7 +259,23 @@ export const HeaderIndicators = () => {
             </svg>
           </span>
           <span className="indicator__title">Hello, {user?.id ? user.displayName : "Log In"}</span>
-          <span className="indicator__value">{user?.id ? "My Account" : ""}</span>
+          {userLocation && (
+            <span 
+              className="indicator__value" 
+              style={{ 
+                fontSize: '12px', 
+                color: '#666',
+                display: 'block',
+                marginTop: '2px',
+                fontStyle: isLoadingLocation ? 'italic' : 'normal'
+              }}
+            >
+              {isLoadingLocation ? 'Detecting location...' : locationName}
+            </span>
+          )}
+          {!userLocation && user?.id && (
+            <span className="indicator__value">My Account</span>
+          )}
         </a>
         <Popover
           id={idAccount}

@@ -156,6 +156,15 @@ const routesConfig = [
         permittedRole: [RoutePermittedRole.Admin],
         url: '/ecommerce/add-products',
       },
+       {
+        id: 'storeManagement',
+        title: 'Store Management',
+        messageId: 'sidebar.ecommerceAdmin.storeManagement',
+        type: 'item',
+        icon: <AddToPhotosIcon fontSize="small"/>,
+        permittedRole: [RoutePermittedRole.SuperAdmin,RoutePermittedRole.Admin],
+        url: '/ecommerce/store-management',
+      },
       // {
       //   id: 'customers',
       //   title: 'Customers',

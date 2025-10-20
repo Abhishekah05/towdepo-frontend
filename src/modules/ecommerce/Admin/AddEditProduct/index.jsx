@@ -28,7 +28,7 @@ export const AddEditProduct = ({ selectedProd, refetchProduct }) => {
   useEffect(() => {
     if (selectedProd) {
       setSelectedTags(selectedProd?.tag || []);
-      
+
       // Transform the images to the correct format for preview
       const formattedImages = selectedProd?.images?.map((img) => ({
         ...img,
@@ -36,7 +36,7 @@ export const AddEditProduct = ({ selectedProd, refetchProduct }) => {
         src: img.src,
         file: null // Add this to indicate it's an existing file
       })) || [];
-      
+
       setUploadedFiles(formattedImages);
       setProductInfo(selectedProd?.productInfo || [{ id: 1, title: '', desc: '' }]);
       setProductSpec(selectedProd?.productSpec || [{ id: 1, title: '', desc: '' }]);
@@ -68,13 +68,15 @@ export const AddEditProduct = ({ selectedProd, refetchProduct }) => {
           selectedProd
             ? {
               ...selectedProd,
-              category: selectedProd?.category.id || 1,
-              inStock: selectedProd?.inStock || false, // Ensure inStock is explicitly included
+              category: selectedProd?.category?.id || selectedProd?.category || 1,
+              store: selectedProd?.store?.id || selectedProd?.store || '', // Add store field
+              inStock: selectedProd?.inStock || false,
             }
             : {
               title: '',
               SKU: '',
               category: 1,
+              store: '', // Add store field with empty default
               mrp: 0,
               salemrp: 0,
               discount: 0,
@@ -85,13 +87,14 @@ export const AddEditProduct = ({ selectedProd, refetchProduct }) => {
           setSubmitting(true);
 
           const formData = new FormData();
-          
-          // Ensure inStock is properly included in the product data
+
+          // Ensure inStock and store are properly included in the product data
           const productData = {
             ...data,
-            inStock: data.inStock || false, // Explicitly include inStock
+            inStock: data.inStock || false,
+            store: data.store || '', // Ensure store is included
           };
-          
+
           // For existing products, append product data as JSON
           if (selectedProd) {
             formData.append('product', JSON.stringify({
@@ -101,7 +104,7 @@ export const AddEditProduct = ({ selectedProd, refetchProduct }) => {
           } else {
             formData.append('product', JSON.stringify(productData));
           }
-          
+
           formData.append('productInfo', JSON.stringify(productInfo));
           formData.append('productSpec', JSON.stringify(productSpec));
 
@@ -117,24 +120,24 @@ export const AddEditProduct = ({ selectedProd, refetchProduct }) => {
 
           try {
             let response;
-            
+
             if (selectedProd) {
               // Update existing product
               response = await uploadPutDataApi(`/product/${selectedProd.id}`, infoViewActionsContext, formData);
               infoViewActionsContext.showMessage('Product updated successfully!');
-              
+
               // First refetch the product data
               if (refetchProduct && typeof refetchProduct === 'function') {
                 await refetchProduct();
               }
-              
+
               // Then navigate to product listing page
               navigate('/ecommerce/product-listing', { state: { refreshData: true } });
             } else {
               // Create new product
               response = await uploadPutDataApi('/product', infoViewActionsContext, formData);
               infoViewActionsContext.showMessage('Product created successfully!');
-              
+
               // For new products, navigate to product details page
               if (refetchProduct && typeof refetchProduct === 'function') {
                 await refetchProduct();
@@ -159,7 +162,7 @@ export const AddEditProduct = ({ selectedProd, refetchProduct }) => {
               />
               <BlogSidebar
                 isEdit={!!selectedProd}
-                inStock={values.inStock}  // Pass current values.inStock instead of selectedProd?.inStock
+                inStock={values.inStock}
                 selectedTags={selectedTags}
                 productInfo={productInfo}
                 productSpec={productSpec}
@@ -167,6 +170,7 @@ export const AddEditProduct = ({ selectedProd, refetchProduct }) => {
                 setFieldValue={setFieldValue}
                 setSelectedTags={setSelectedTags}
                 setProductSpec={setProductSpec}
+                values={values} // Add this line to pass form values
               />
             </AppGridContainer>
           </Form>

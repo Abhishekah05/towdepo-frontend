@@ -314,40 +314,51 @@ const ProductDetailPage = ({ product }) => {
     }
   };
 
-  const handleAddToCart = () => {
-    if (selectedVariant) {
-      try {
-        let finalPrice = selectedVariant.price;
-        let discountAmount = 0;
+const handleAddToCart = () => {
+  if (selectedVariant) {
+    try {
+      let finalPrice = selectedVariant.price;
+      let discountAmount = 0;
 
-        if (product?.discount && product?.mrp) {
-          discountAmount = (product.mrp * parseFloat(product.discount)) / 100;
-          finalPrice = product.mrp - discountAmount;
-        }
-
-        dispatch(
-          addItemToCart({
-            ...selectedVariant,
-            quantity: quantity,
-            title: product.title,
-            customizationId,
-            stockQuantity: selectedVariant.quantity,
-            price: finalPrice,
-            originalPrice: product.mrp || selectedVariant.price,
-            discount: product.discount || 0,
-            discountAmount: discountAmount * quantity,
-          })
-        );
-        setSnackbarMessage(`${quantity} ${product.title} added to cart successfully`);
-        setSnackbarSeverity("success");
-        setOpenSnackbar(true);
-      } catch (error) {
-        setSnackbarMessage("Failed to add item to cart");
-        setSnackbarSeverity("error");
-        setOpenSnackbar(true);
+      if (product?.discount && product?.mrp) {
+        discountAmount = (product.mrp * parseFloat(product.discount)) / 100;
+        finalPrice = product.mrp - discountAmount;
       }
+
+      // Get store information from product
+      const storeInfo = {
+        storeId: product?.store?.id,
+        storeName: product?.store?.name,
+        storeLocation: product?.store?.location,
+        deliveryRadius: product?.store?.deliveryRadius || 10
+      };
+
+      dispatch(
+        addItemToCart({
+          ...selectedVariant,
+          quantity: quantity,
+          title: product.title,
+          customizationId,
+          stockQuantity: selectedVariant.quantity,
+          price: finalPrice,
+          originalPrice: product.mrp || selectedVariant.price,
+          discount: product.discount || 0,
+          discountAmount: discountAmount * quantity,
+          // Add store information
+          store: storeInfo,
+          storeId: product?.store?.id, // Direct storeId for easy access
+        })
+      );
+      setSnackbarMessage(`${quantity} ${product.title} added to cart successfully`);
+      setSnackbarSeverity("success");
+      setOpenSnackbar(true);
+    } catch (error) {
+      setSnackbarMessage("Failed to add item to cart");
+      setSnackbarSeverity("error");
+      setOpenSnackbar(true);
     }
-  };
+  }
+};
   const handleCloseSnackbar = (event, reason) => {
     if (reason === "clickaway") {
       return;

@@ -37,13 +37,27 @@ const cartSlice = createSlice({
       // Get stock quantity from the variant
       const stockQuantity = newItem.stockQuantity || 0;
 
+      // Validate store information
+      const storeInfo = {
+        storeId: newItem.storeId || newItem.store?.id,
+        storeName: newItem.store?.storeName || newItem.store?.name,
+        storeLocation: newItem.store?.storeLocation || newItem.store?.location,
+        deliveryRadius: newItem.store?.deliveryRadius || 10
+      };
+
       if (price <= 0) {
         console.warn(`Item ${newItem.sku} has no valid price, cannot add to cart.`);
         return;
       }
 
+      // Check if storeId is present
+      if (!storeInfo.storeId) {
+        console.warn(`Item ${newItem.sku} has no store information, cannot add to cart.`);
+        return;
+      }
+
       const existingItem = state.items.find(
-        (item) => item.id === newItem.id && item.variantId === newItem.variantId
+        (item) => item.id === newItem.id && item.variantId === newItem.variantId && item.storeId === storeInfo.storeId
       );
 
       if (!existingItem) {
@@ -66,6 +80,11 @@ const cartSlice = createSlice({
           totalPrice: price * finalQuantity,
           price,
           stockQuantity, // Store stock information in cart item
+          // Store information
+          storeId: storeInfo.storeId,
+          storeName: storeInfo.storeName,
+          storeLocation: storeInfo.storeLocation,
+          deliveryRadius: storeInfo.deliveryRadius
         });
       } else {
         // Check if increasing would exceed stock
@@ -91,15 +110,19 @@ const cartSlice = createSlice({
     },
 
     decreaseItemQuantity(state, action) {
-      const { id, variantId } = action.payload;
-      const existingItem = state.items.find(item => item.id === id && item.variantId === variantId);
+      const { id, variantId, storeId } = action.payload;
+      const existingItem = state.items.find(item => 
+        item.id === id && item.variantId === variantId && item.storeId === storeId
+      );
 
       if (existingItem) {
         if (existingItem.quantity > 1) {
           existingItem.quantity -= 1;
           existingItem.totalPrice = existingItem.price * existingItem.quantity;
         } else {
-          state.items = state.items.filter(item => !(item.id === id && item.variantId === variantId));
+          state.items = state.items.filter(item => 
+            !(item.id === id && item.variantId === variantId && item.storeId === storeId)
+          );
         }
 
         recalculateTotals(state);
@@ -107,8 +130,10 @@ const cartSlice = createSlice({
     },
 
     increaseItemQuantity(state, action) {
-      const { id, variantId } = action.payload;
-      const existingItem = state.items.find(item => item.id === id && item.variantId === variantId);
+      const { id, variantId, storeId } = action.payload;
+      const existingItem = state.items.find(item => 
+        item.id === id && item.variantId === variantId && item.storeId === storeId
+      );
 
       if (existingItem) {
         // Check if increasing would exceed stock
@@ -123,9 +148,11 @@ const cartSlice = createSlice({
     },
 
     removeItemFromCart(state, action) {
-      const { id, variantId } = action.payload;
+      const { id, variantId, storeId } = action.payload;
 
-      state.items = state.items.filter(item => !(item.id === id && item.variantId === variantId));
+      state.items = state.items.filter(item => 
+        !(item.id === id && item.variantId === variantId && item.storeId === storeId)
+      );
 
       recalculateTotals(state);
     },
@@ -147,8 +174,10 @@ const cartSlice = createSlice({
     
     // New action to update stock quantity if it changes in the backend
     updateItemStock(state, action) {
-      const { id, variantId, stockQuantity } = action.payload;
-      const existingItem = state.items.find(item => item.id === id && item.variantId === variantId);
+      const { id, variantId, storeId, stockQuantity } = action.payload;
+      const existingItem = state.items.find(item => 
+        item.id === id && item.variantId === variantId && item.storeId === storeId
+      );
       
       if (existingItem) {
         existingItem.stockQuantity = stockQuantity;
@@ -161,6 +190,28 @@ const cartSlice = createSlice({
           console.warn(`Quantity adjusted to ${stockQuantity} due to stock update.`);
         }
       }
+    },
+
+    // New action to get store information from cart
+    getCartStoreInfo(state) {
+      if (state.items.length === 0) {
+        return null;
+      }
+      
+      // Get unique stores from cart items
+      const stores = {};
+      state.items.forEach(item => {
+        if (item.storeId) {
+          stores[item.storeId] = {
+            storeId: item.storeId,
+            storeName: item.storeName,
+            storeLocation: item.storeLocation,
+            deliveryRadius: item.deliveryRadius
+          };
+        }
+      });
+      
+      return Object.values(stores);
     }
   },
 });
@@ -174,6 +225,7 @@ export const {
   clearCart,
   increaseItemQuantity,
   updateItemStock,
+  getCartStoreInfo,
 } = cartSlice.actions;
 
 // Export the cart reducer

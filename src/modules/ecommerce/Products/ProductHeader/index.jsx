@@ -39,11 +39,12 @@ const ProductHeader = ({
   totalProducts,
   onPageChange,
   setViewType,
-  onSortChange,
-  sortOrder,
+  onLocationChange,
+  selectedLocation,
+  availableLocations,
 }) => {
-  const handleSortChange = (event) => {
-    onSortChange(event.target.value);
+  const handleLocationChange = (event) => {
+    onLocationChange(event.target.value);
   };
 
   return (
@@ -70,18 +71,23 @@ const ProductHeader = ({
           ml: "auto",
         }}
       >
-        <FormControl sx={{ minWidth: 120 }} size="small">
-          <InputLabel id="sort-select-label">Sort By</InputLabel>
+        <FormControl sx={{ minWidth: 200 }} size="small">
+          <InputLabel id="location-select-label">Select Location</InputLabel>
           <Select
-            labelId="sort-select-label"
-            id="sort-select"
-            value={sortOrder}
-            label="Sort By"
-            onChange={handleSortChange}
+            labelId="location-select-label"
+            id="location-select"
+            value={selectedLocation}
+            label="Select Location"
+            onChange={handleLocationChange}
           >
-            <MenuItem value="featured">Featured</MenuItem>
-            <MenuItem value="lowToHigh">Price: Low to High</MenuItem>
-            <MenuItem value="highToLow">Price: High to Low</MenuItem>
+            {/* <MenuItem value="auto">
+              📍 Current Location (Auto-detected)
+            </MenuItem> */}
+            {availableLocations?.map((location) => (
+              <MenuItem key={location.id} value={location.id}>
+                📍 {location.city}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 
@@ -140,6 +146,7 @@ ProductHeader.propTypes = {
   totalProducts: PropTypes.number,
   onPageChange: PropTypes.func,
   setViewType: PropTypes.func,
-  onSortChange: PropTypes.func.isRequired,
-  sortOrder: PropTypes.string.isRequired,
+  onLocationChange: PropTypes.func.isRequired,
+  selectedLocation: PropTypes.string.isRequired,
+  availableLocations: PropTypes.array.isRequired,
 };

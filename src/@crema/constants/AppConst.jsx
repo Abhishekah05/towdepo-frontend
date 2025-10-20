@@ -14,11 +14,15 @@ export const defaultUser = {
 };
 export const getInitialUrlByRole = (role) => {
   switch (role) {
+     case 'superadmin':
+      return '/ecommerce/store-management';
+
     case 'admin':
       return '/ecommerce/add-products';
    
     case 'user':
       return '/home';
+      
     default:
       return '/signin';
   }

@@ -17,6 +17,8 @@ const ProductView = React.lazy(() =>
 
 const OrdersManagement = React.lazy(() => import('../../../modules/ecommerce/Admin/Orders'));
 
+const StoreManagement = React.lazy(() => import('../../../modules/ecommerce/Admin/StoreManagement/Store'));
+
 const ProductSettings = React.lazy(() =>
   import('../../../modules/ecommerce/Admin/productSettingsPage'),
 );
@@ -24,7 +26,7 @@ const ProductSettings = React.lazy(() =>
 
 export const ecomadminconfig = [
   {
-    permittedRole: RoutePermittedRole.Admin,
+    permittedRole: [RoutePermittedRole.SuperAdmin,RoutePermittedRole.Admin ],
     path: '/ecommerce/product-listing',
     element: <ProductListing />,
   },
@@ -48,6 +50,11 @@ export const ecomadminconfig = [
     permittedRole: RoutePermittedRole.Admin,
     path: '/ecommerce/order-management',
     element: <OrdersManagement />,
+  },
+   {
+    permittedRole:[RoutePermittedRole.SuperAdmin,RoutePermittedRole.Admin ] ,
+    path: '/ecommerce/store-management',
+    element: <StoreManagement />,
   },
   {
     permittedRole: RoutePermittedRole.Admin,

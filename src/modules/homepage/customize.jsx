@@ -97,7 +97,7 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 }));
 
 const DescriptionText = styled(Typography)(({ theme }) => ({
- 
+
   fontWeight: 400,
 
   fontSize: '24px',
@@ -110,7 +110,7 @@ const DescriptionText = styled(Typography)(({ theme }) => ({
   },
   [theme.breakpoints.down('sm')]: {
     fontSize: '16px',
-    textAlign: 'center', 
+    textAlign: 'center',
     padding: theme.spacing(0, 1),
   },
 }));
@@ -134,14 +134,14 @@ const CustomizeButton = styled(Button)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     padding: theme.spacing(1.2, 3.5),
     fontSize: '1.1rem',
-    width: '80%', // Make button wider on mobile
-    maxWidth: '250px', // But not too wide
+    width: '80%',
+    maxWidth: '250px',
   },
 }));
 
 // Main component
 const CustomizableApparel = () => {
-  // Replace with your actual image path
+
   const mainImagePath = "assets/homepageimages/Custom2.png";
 
   return (

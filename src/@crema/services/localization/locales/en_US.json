@@ -470,6 +470,8 @@
   "sidebar.ecommerce": "Ecommerce Portal",
   "sidebar.ecommerceAdmin": " Admin ",
   "sidebar.ecommerceAdmin.addProducts": "Add Products",
+    "sidebar.ecommerceAdmin.storeManagement": "Store Management",
+
   "sidebar.ecommerceAdmin.productListing": "Product Management",
   "sidebar.invoice": "Invoice",
   "sidebar.invoice.home": "Invoices",

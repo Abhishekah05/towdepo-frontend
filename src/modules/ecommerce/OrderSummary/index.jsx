@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Divider, TextField, Button, Grid } from '@mui/material';
+import { Box, Typography, Divider, TextField, Button, Grid, Alert, CircularProgress } from '@mui/material';
 import { Fonts } from '@crema/constants/AppEnums';
 import PropTypes from 'prop-types';
 import PaymentInfo from '../Checkout/PaymentInfo';
@@ -23,7 +23,7 @@ const getDiscountPrice = (cartItems) => {
   return totalDiscountAmount;
 };
 
-const OrderSummary = ({ cartItems }) => {
+const OrderSummary = ({ cartItems, deliveryAvailable = false, deliveryMessage = '', checkingDelivery = false }) => {
   const totalPrice = getTotalPrice(cartItems);
   const discountAmount = getDiscountPrice(cartItems);
   const grandTotal = totalPrice - discountAmount;
@@ -42,6 +42,22 @@ const OrderSummary = ({ cartItems }) => {
       >
         Your Order
       </Typography>
+
+      {/* Delivery Availability Status */}
+      {checkingDelivery && (
+        <Alert severity="info" sx={{ mb: 2, ml: { xs: 0, md: 5 }, mr: { xs: 0, md: 5 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={16} />
+            Checking delivery availability...
+          </Box>
+        </Alert>
+      )}
+
+      {!deliveryAvailable && deliveryMessage && !checkingDelivery && (
+        <Alert severity="warning" sx={{ mb: 2, ml: { xs: 0, md: 5 }, mr: { xs: 0, md: 5 } }}>
+          {deliveryMessage}
+        </Alert>
+      )}
 
       {/* Product Rows */}
       {cartItems.map((item, idx) => {
@@ -150,6 +166,9 @@ const OrderSummary = ({ cartItems }) => {
             height: "35px",
             backgroundColor: '#FF6600',
             whiteSpace: 'nowrap',
+            '&:hover': {
+              backgroundColor: '#e55a00',
+            }
           }}
         >
           Apply
@@ -162,7 +181,7 @@ const OrderSummary = ({ cartItems }) => {
       {[
         { label: 'Subtotal', value: `$${totalPrice.toFixed(2)}` },
         { label: 'Discount', value: `$${discountAmount.toFixed(2)}` },
-        { label: 'Shipment Cost', value: '$0.00' },
+        { label: 'Shipment Cost', value: deliveryAvailable ? '$0.00' : 'N/A' },
       ].map((row, idx) => (
         <Box
           key={idx}
@@ -206,20 +225,26 @@ const OrderSummary = ({ cartItems }) => {
         <Typography
           sx={{ fontSize: 14, fontWeight: Fonts.MEDIUM, color: '#333' }}
         >
-          ${grandTotal.toFixed(2)}
+          {deliveryAvailable ? `$${grandTotal.toFixed(2)}` : 'N/A'}
         </Typography>
       </Box>
 
       {/* Button */}
       <Box sx={{ mb: { xs: 4, md: 10 }, mr: { xs: 0, md: 5 } }}>
-        <PaymentInfo />
+        <PaymentInfo 
+          deliveryAvailable={deliveryAvailable} 
+          checkingDelivery={checkingDelivery}
+        />
       </Box>
     </Box>
   );
 };
 
-export default OrderSummary;
-
 OrderSummary.propTypes = {
   cartItems: PropTypes.array,
+  deliveryAvailable: PropTypes.bool,
+  deliveryMessage: PropTypes.string,
+  checkingDelivery: PropTypes.bool,
 };
+
+export default OrderSummary;

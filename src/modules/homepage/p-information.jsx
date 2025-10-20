@@ -156,7 +156,7 @@ const ApparelCustomization = () => {
             width: '100%',
             overflow: 'hidden',
             py: isMobile ? 4 : 6,
-            marginTop: isDesktop ? -70 : 0 
+            marginTop: isDesktop ? -20 : 0 
         }}>
             <Box sx={{ width: '100%', px: { xs: 2, sm: 3, md: 4, lg: 6 } }}>
                 {/* Tee Shirts and Safety Jackets Section */}

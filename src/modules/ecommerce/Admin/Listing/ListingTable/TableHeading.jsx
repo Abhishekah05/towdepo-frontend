@@ -1,12 +1,14 @@
+// components/TableHeading.jsx
 import React from 'react';
 import TableCell from '@mui/material/TableCell';
 import TableHeader from '@crema/components/AppTable/TableHeader';
 
-const TableHeading = () => {
+const TableHeading = ({ showLocationColumn = false }) => {
   return (
     <TableHeader>
-      <TableCell align='start'> Product Name</TableCell>
+      <TableCell align='start'>Product Name</TableCell>
       <TableCell align='start'>Product SKU</TableCell>
+      {showLocationColumn && <TableCell align='start'>Store</TableCell>}
       <TableCell align='start'>Created at</TableCell>
       <TableCell align='start'>Status</TableCell>
       <TableCell align='start'>Price</TableCell>
