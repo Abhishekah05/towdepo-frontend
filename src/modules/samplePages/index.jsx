@@ -28,6 +28,10 @@ const Header = () => {
   const [locationMenuOpen, setLocationMenuOpen] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [cityName, setCityName] = useState('');
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+
+  // LocationIQ API Key
+  const LOCATION_IQ_API_KEY = 'pk.3afe48fb1a4f87a3a0a9a45a8471f945';
 
   // Get stored location from localStorage on component mount
   useEffect(() => {
@@ -36,7 +40,7 @@ const Header = () => {
       setUserLocation(storedLocation);
       if (storedLocation.city) {
         setCityName(storedLocation.city);
-      } else {
+      } else if (storedLocation.latitude && storedLocation.longitude) {
         getCityName(storedLocation.latitude, storedLocation.longitude);
       }
     }
@@ -62,60 +66,119 @@ const Header = () => {
     }
   };
 
-  // Reverse geocoding to get city name from coordinates
+  // Reverse geocoding using LocationIQ and BigDataCloud
   const getCityName = async (latitude, longitude) => {
+    console.log('Getting city name for coordinates:', latitude, longitude);
+    
+    // Try LocationIQ first, then fallback to BigDataCloud
+    try {
+      const city = await getCityNameFromLocationIQ(latitude, longitude);
+      if (city && city !== 'Unknown Location') {
+        return city;
+      }
+    } catch (error) {
+      console.log('LocationIQ failed, trying BigDataCloud...');
+    }
+
+    // Try BigDataCloud as fallback
+    try {
+      const city = await getCityNameFromBigDataCloud(latitude, longitude);
+      if (city && city !== 'Unknown Location') {
+        return city;
+      }
+    } catch (error) {
+      console.log('BigDataCloud also failed');
+    }
+    
+    // If all services fail, use coordinates as fallback
+    const fallbackName = `Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+    setCityName(fallbackName);
+    updateStoredLocationCity(fallbackName);
+    return fallbackName;
+  };
+
+  // Primary Service: LocationIQ
+  const getCityNameFromLocationIQ = async (latitude, longitude) => {
+    try {
+      const response = await fetch(
+        `https://us1.locationiq.com/v1/reverse.php?key=${LOCATION_IQ_API_KEY}&lat=${latitude}&lon=${longitude}&format=json&accept-language=en`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`LocationIQ API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('LocationIQ response:', data);
+      
+      if (data.address) {
+        // Try to get the most specific location name for Mysuru region
+        const city = data.address.city || 
+                    data.address.town || 
+                    data.address.village || 
+                    data.address.county ||
+                    data.address.state_district ||
+                    data.address.region;
+        
+        if (city) {
+          setCityName(city);
+          updateStoredLocationCity(city);
+          return city;
+        } else if (data.display_name) {
+          // Use the first part of display name as fallback
+          const displayName = data.display_name.split(',')[0];
+          setCityName(displayName);
+          updateStoredLocationCity(displayName);
+          return displayName;
+        }
+      }
+      return 'Unknown Location';
+    } catch (error) {
+      console.error('Error with LocationIQ:', error);
+      throw error;
+    }
+  };
+
+  // Fallback Service: BigDataCloud (free, CORS-friendly)
+  const getCityNameFromBigDataCloud = async (latitude, longitude) => {
     try {
       const response = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
       );
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.city) {
-          setCityName(data.city);
-          const storedLocation = getStoredLocation();
-          if (storedLocation) {
-            storedLocation.city = data.city;
-            storeLocation(storedLocation);
-          }
-        } else {
-          setCityName('Unknown Location');
-        }
-      } else {
-        setCityName('Location detected');
+      if (!response.ok) {
+        throw new Error(`BigDataCloud API error: ${response.status}`);
       }
+      
+      const data = await response.json();
+      console.log('BigDataCloud response:', data);
+      
+      if (data.city) {
+        setCityName(data.city);
+        updateStoredLocationCity(data.city);
+        return data.city;
+      } else if (data.locality) {
+        setCityName(data.locality);
+        updateStoredLocationCity(data.locality);
+        return data.locality;
+      } else if (data.principalSubdivision) {
+        setCityName(data.principalSubdivision);
+        updateStoredLocationCity(data.principalSubdivision);
+        return data.principalSubdivision;
+      }
+      return 'Unknown Location';
     } catch (error) {
-      console.error('Error fetching city name:', error);
-      setCityName('Location detected');
-      getCityNameFromOSM(latitude, longitude);
+      console.error('Error with BigDataCloud:', error);
+      throw error;
     }
   };
 
-  // Alternative reverse geocoding using OpenStreetMap Nominatim
-  const getCityNameFromOSM = async (latitude, longitude) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.address) {
-          const city = data.address.city || data.address.town || data.address.village || data.address.county;
-          if (city) {
-            setCityName(city);
-            const storedLocation = getStoredLocation();
-            if (storedLocation) {
-              storedLocation.city = city;
-              storeLocation(storedLocation);
-            }
-          } else {
-            setCityName('Unknown Location');
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching city name from OSM:', error);
+  // Helper function to update stored location with city name
+  const updateStoredLocationCity = (city) => {
+    const storedLocation = getStoredLocation();
+    if (storedLocation) {
+      storedLocation.city = city;
+      storeLocation(storedLocation);
     }
   };
 
@@ -124,11 +187,14 @@ const Header = () => {
     if (!userLocation) {
       return 'Select Location';
     }
+    if (isDetectingLocation) {
+      return 'Detecting...';
+    }
     return cityName || 'Your Location';
   };
 
   // Detect current location
-  const detectCurrentLocation = (e) => {
+  const detectCurrentLocation = async (e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -139,47 +205,62 @@ const Header = () => {
       return;
     }
 
+    setIsDetectingLocation(true);
     setCityName('Detecting location...');
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const location = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          timestamp: new Date().toISOString()
-        };
-        
-        setUserLocation(location);
-        storeLocation(location);
-        await getCityName(location.latitude, location.longitude);
-        setLocationMenuOpen(false);
-      },
-      (error) => {
-        let errorMessage = 'Unable to retrieve your location.';
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Location access denied. Please enable location permissions in your browser settings.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable.';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out. Please try again.';
-            break;
-        }
-        
-        alert(errorMessage);
-        setCityName('');
-        setUserLocation(null);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 60000
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        });
+      });
+
+      console.log('Raw geolocation coordinates:', {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      });
+
+      const location = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: new Date().toISOString()
+      };
+      
+      setUserLocation(location);
+      storeLocation(location);
+      
+      // Get city name using our services
+      await getCityName(location.latitude, location.longitude);
+      
+      setLocationMenuOpen(false);
+    } catch (error) {
+      console.error('Geolocation error:', error);
+      let errorMessage = 'Unable to retrieve your location.';
+      
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = 'Location access denied. Please enable location permissions in your browser settings.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Location information is unavailable. Please check your internet connection and try again.';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'Location request timed out. Please try again in an area with better signal.';
+          break;
+        default:
+          errorMessage = 'An unexpected error occurred while detecting location.';
       }
-    );
+      
+      alert(errorMessage);
+      setCityName('');
+      setUserLocation(null);
+    } finally {
+      setIsDetectingLocation(false);
+    }
   };
 
   // Clear location
@@ -190,6 +271,7 @@ const Header = () => {
     }
     setUserLocation(null);
     setCityName('');
+    setIsDetectingLocation(false);
     localStorage.removeItem('userLocation');
     setLocationMenuOpen(false);
   };
@@ -256,6 +338,7 @@ const Header = () => {
                   className="topbar__button topbar__button--has-arrow topbar__menu-button"
                   type="button"
                   onClick={toggleLocationMenu}
+                  disabled={isDetectingLocation}
                 >
                   <span className="topbar__button-label">Location:</span>
                   <span className="topbar__button-title">
@@ -289,18 +372,21 @@ const Header = () => {
                         border: 'none', 
                         width: '100%', 
                         textAlign: 'left',
-                        cursor: 'pointer',
+                        cursor: isDetectingLocation ? 'not-allowed' : 'pointer',
                         padding: '12px 16px',
                         fontSize: '14px',
-                        color: 'inherit',
+                        color: isDetectingLocation ? '#6c757d' : 'inherit',
                         textDecoration: 'none',
                         display: 'flex',
                         alignItems: 'center',
-                        fontFamily: 'inherit'
+                        fontFamily: 'inherit',
+                        opacity: isDetectingLocation ? 0.6 : 1
                       }}
                       onClick={detectCurrentLocation}
+                      disabled={isDetectingLocation}
                     >
-                      <GPSIcon /> Detect current location
+                      <GPSIcon /> 
+                      {isDetectingLocation ? 'Detecting location...' : 'Detect current location'}
                     </button>
                   ) : (
                     <>
@@ -316,7 +402,10 @@ const Header = () => {
                         <div style={{ marginTop: '4px' }}>{cityName || 'Location detected'}</div>
                         {userLocation && (
                           <div style={{ fontSize: '10px', marginTop: '4px' }}>
-                            Lat: {userLocation.latitude.toFixed(4)}, Lng: {userLocation.longitude.toFixed(4)}
+                            Lat: {userLocation.latitude.toFixed(6)}, Lng: {userLocation.longitude.toFixed(6)}
+                            {userLocation.accuracy && (
+                              <div>Accuracy: ±{Math.round(userLocation.accuracy)} meters</div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -327,18 +416,21 @@ const Header = () => {
                           border: 'none', 
                           width: '100%', 
                           textAlign: 'left',
-                          cursor: 'pointer',
+                          cursor: isDetectingLocation ? 'not-allowed' : 'pointer',
                           padding: '12px 16px',
                           fontSize: '14px',
-                          color: 'inherit',
+                          color: isDetectingLocation ? '#6c757d' : 'inherit',
                           textDecoration: 'none',
                           display: 'flex',
                           alignItems: 'center',
-                          fontFamily: 'inherit'
+                          fontFamily: 'inherit',
+                          opacity: isDetectingLocation ? 0.6 : 1
                         }}
                         onClick={detectCurrentLocation}
+                        disabled={isDetectingLocation}
                       >
-                        <GPSIcon /> Update Location
+                        <GPSIcon /> 
+                        {isDetectingLocation ? 'Updating Location...' : 'Update Location'}
                       </button>
                       <button 
                         className="topbar__menu-item" 

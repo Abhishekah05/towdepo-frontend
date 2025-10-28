@@ -157,6 +157,15 @@ const routesConfig = [
         url: '/ecommerce/add-products',
       },
        {
+        id: 'storeDashboard',
+        title: 'Store Dashboard',
+        messageId: 'sidebar.ecommerceAdmin.storeDashboard',
+        type: 'item',
+        icon: <AddToPhotosIcon fontSize="small"/>,
+        permittedRole: [RoutePermittedRole.Admin],
+        url: '/ecommerce/store-dash',
+      },
+       {
         id: 'storeManagement',
         title: 'Store Management',
         messageId: 'sidebar.ecommerceAdmin.storeManagement',

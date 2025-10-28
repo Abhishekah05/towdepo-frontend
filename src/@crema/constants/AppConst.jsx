@@ -18,7 +18,7 @@ export const getInitialUrlByRole = (role) => {
       return '/ecommerce/store-management';
 
     case 'admin':
-      return '/ecommerce/add-products';
+      return '/ecommerce/store-dash';
    
     case 'user':
       return '/home';

@@ -38,8 +38,6 @@ const BasketButton = () => {
   const open = Boolean(anchorEl);
   const id = open ? 'cart-popover' : undefined;
 
-  
-
   return (
     <>
       <div className="indicator indicator--trigger--click" onClick={handleClick}>
@@ -53,8 +51,8 @@ const BasketButton = () => {
             <span className="indicator__counter">{cart.items?.length}</span>
           </span>
           <span className="indicator__title">Cart</span>
-          <span className="indicator__value">${totalPrice.toFixed(2)}</span> {/* Displaying total price */}
-          </a>
+          <span className="indicator__value">${totalPrice.toFixed(2)}</span>
+        </a>
       </div>
       <Popover
         id={id}
@@ -78,11 +76,9 @@ const BasketButton = () => {
   );
 };
 
-
-
 const WishlistButton = () => {
   const [anchorEl, setAnchorEl] = useState(null);
-  const wishlist = useSelector((state) => state.wishlist);  // Assuming wishlist items are in Redux state
+  const wishlist = useSelector((state) => state.wishlist);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -123,61 +119,160 @@ const WishlistButton = () => {
       >
         <Typography sx={{ p: 2 ,backgroundColor:'#f1f1f1' }}>Wishlist Items</Typography>
         <Divider />
-        <DropWishlist /> {/* This will display the wishlist items */}
+        <DropWishlist />
       </Popover>
     </>
   );
 };
 
-// Function to get location name from coordinates using reverse geocoding
+// IMPROVED: Better location name function with multiple geocoding services
 // const getLocationName = async (latitude, longitude) => {
+//   console.log('Getting location name for:', latitude, longitude);
+  
 //   try {
+//     // Try Google Maps Geocoding API first (most accurate)
+//     const googleName = await getLocationNameFromGoogle(latitude, longitude);
+//     if (googleName) {
+//       console.log('Found location via Google:', googleName);
+//       return googleName;
+//     }
+
+//     // Try BigDataCloud as second option
+//     const bigDataName = await getLocationNameFromBigDataCloud(latitude, longitude);
+//     if (bigDataName) {
+//       console.log('Found location via BigDataCloud:', bigDataName);
+//       return bigDataName;
+//     }
+
+//     // Try OpenStreetMap as third option
+//     const osmName = await getLocationNameFromOSM(latitude, longitude);
+//     if (osmName) {
+//       console.log('Found location via OSM:', osmName);
+//       return osmName;
+//     }
+
+//     // If all APIs fail, show coordinates
+//     console.log('All geocoding APIs failed, using coordinates');
+//     return `Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+    
+//   } catch (error) {
+//     console.error('All geocoding APIs failed:', error);
+//     return 'Your location';
+//   }
+// };
+
+// Google Maps Geocoding API (Most Accurate)
+// const getLocationNameFromGoogle = async (latitude, longitude) => {
+//   try {
+//     const GOOGLE_MAPS_API_KEY = 'AIzaSyDiMFGT0VJq9FRjuCXczF3Df1rhnAQf_hE';
+    
+//     if (!GOOGLE_MAPS_API_KEY) {
+//       console.log('Google Maps API key not configured');
+//       return null;
+//     }
+
 //     const response = await fetch(
-//       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+//       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
 //     );
     
 //     if (!response.ok) {
-//       throw new Error('Failed to fetch location data');
+//       throw new Error(`HTTP error! status: ${response.status}`);
 //     }
     
 //     const data = await response.json();
     
-//     if (data && data.address) {
-//       // Try to get a readable address in this order of preference
-//       const address = data.address;
+//     if (data.status === 'OK' && data.results.length > 0) {
+//       // Find the most specific locality result
+//       for (let result of data.results) {
+//         const addressComponents = result.address_components;
+        
+//         // Look for locality
+//         const locality = addressComponents.find(component =>
+//           component.types.includes('locality')
+//         );
+        
+//         // Look for administrative_area_level_2 (county)
+//         const adminArea2 = addressComponents.find(component =>
+//           component.types.includes('administrative_area_level_2')
+//         );
+        
+//         // Look for postal_town
+//         const postalTown = addressComponents.find(component =>
+//           component.types.includes('postal_town')
+//         );
+        
+//         if (locality) {
+//           return locality.long_name;
+//         } else if (postalTown) {
+//           return postalTown.long_name;
+//         } else if (adminArea2) {
+//           return adminArea2.long_name;
+//         }
+//       }
       
-//       if (address.road && address.city) {
-//         return `${address.road}, ${address.city}`;
-//       } else if (address.suburb && address.city) {
-//         return `${address.suburb}, ${address.city}`;
-//       } else if (address.city) {
-//         return address.city;
-//       } else if (address.town) {
-//         return address.town;
-//       } else if (address.village) {
-//         return address.village;
-//       } else if (address.county) {
-//         return address.county;
-//       } else if (address.state) {
-//         return address.state;
-//       } else if (data.display_name) {
-//         // Fallback to full display name
-//         return data.display_name.split(',')[0]; // Get first part of address
+//       // If no specific locality found, use the first result's formatted address
+//       const firstResult = data.results[0];
+//       const addressParts = firstResult.formatted_address.split(',');
+//       return addressParts[0].trim();
+//     } else {
+//       console.warn('Google Geocoding failed:', data.status);
+//       return null;
+//     }
+//   } catch (error) {
+//     console.error('Error with Google Geocoding:', error);
+//     return null;
+//   }
+// };
+
+// // BigDataCloud API
+// const getLocationNameFromBigDataCloud = async (latitude, longitude) => {
+//   try {
+//     const response = await fetch(
+//       `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+//     );
+    
+//     if (response.ok) {
+//       const data = await response.json();
+      
+//       if (data.city) {
+//         return data.city;
+//       } else if (data.locality) {
+//         return data.locality;
 //       }
 //     }
-    
-//     // Final fallback
-//     return 'Location detected';
+//     return null;
 //   } catch (error) {
-//     console.error('Error fetching location name:', error);
-//     // Fallback to a simple message
-//     return 'Your location';
+//     console.error('Error with BigDataCloud:', error);
+//     return null;
+//   }
+// };
+
+// // OpenStreetMap Nominatim
+// const getLocationNameFromOSM = async (latitude, longitude) => {
+//   try {
+//     const response = await fetch(
+//       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+//     );
+    
+//     if (response.ok) {
+//       const data = await response.json();
+      
+//       if (data.address) {
+//         const city = data.address.city || data.address.town || data.address.village || data.address.municipality;
+//         if (city) {
+//           return city;
+//         }
+//       }
+//     }
+//     return null;
+//   } catch (error) {
+//     console.error('Error with OSM:', error);
+//     return null;
 //   }
 // };
 
 export const HeaderIndicators = () => {
   const [accountAnchorEl, setAccountAnchorEl] = useState(null);
-  const [wishlistAnchorEl, setWishlistAnchorEl] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [locationName, setLocationName] = useState('');
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -187,62 +282,84 @@ export const HeaderIndicators = () => {
   const accountButtonRef = useRef(null);
 
   // Load user location from localStorage and get location name
-  useEffect(() => {
-    const loadUserLocation = async () => {
-      const userLocationStr = localStorage.getItem('userLocation');
-      if (userLocationStr) {
-        try {
-          const location = JSON.parse(userLocationStr);
-          setUserLocation(location);
-          setIsLoadingLocation(true);
+  // useEffect(() => {
+  //   const loadUserLocation = async () => {
+  //     const userLocationStr = localStorage.getItem('userLocation');
+  //     console.log('Loading user location from localStorage:', userLocationStr);
+      
+  //     if (userLocationStr) {
+  //       try {
+  //         const location = JSON.parse(userLocationStr);
+  //         console.log('Parsed location:', location);
+  //         setUserLocation(location);
+  //         setIsLoadingLocation(true);
           
-          // Get location name from coordinates using reverse geocoding
-          const name = await getLocationName(location.latitude, location.longitude);
-          setLocationName(name);
-        } catch (error) {
-          console.error('Error parsing user location:', error);
-          setLocationName('Your location');
-        } finally {
-          setIsLoadingLocation(false);
-        }
-      }
-    };
+  //         // Get location name from coordinates using reverse geocoding
+  //         const name = await getLocationName(location.latitude, location.longitude);
+  //         console.log('Location name resolved:', name);
+  //         setLocationName(name);
+  //       } catch (error) {
+  //         console.error('Error parsing user location:', error);
+  //         setLocationName('Your location');
+  //       } finally {
+  //         setIsLoadingLocation(false);
+  //       }
+  //     } else {
+  //       console.log('No user location found in localStorage');
+  //     }
+  //   };
 
-    loadUserLocation();
+  //   loadUserLocation();
 
-    // Optional: Listen for storage changes to update location in real-time
-    const handleStorageChange = (e) => {
-      if (e.key === 'userLocation') {
-        loadUserLocation();
-      }
-    };
+  //   // Listen for location changes from Header component
+  //   const handleLocationChanged = (event) => {
+  //     console.log('Location changed event received in HeaderIndicators:', event.detail);
+  //     if (event.detail.userLocation) {
+  //       setUserLocation(event.detail.userLocation);
+  //       setIsLoadingLocation(true);
+        
+  //       // Update location name when location changes
+  //       getLocationName(event.detail.userLocation.latitude, event.detail.userLocation.longitude)
+  //         .then(name => {
+  //           setLocationName(name);
+  //           setIsLoadingLocation(false);
+  //         })
+  //         .catch(error => {
+  //           console.error('Error updating location name:', error);
+  //           setLocationName('Your location');
+  //           setIsLoadingLocation(false);
+  //         });
+  //     }
+  //   };
 
-    window.addEventListener('storage', handleStorageChange);
+  //   // Listen for storage changes to update location in real-time
+  //   const handleStorageChange = (e) => {
+  //     if (e.key === 'userLocation') {
+  //       console.log('Storage change detected for userLocation');
+  //       loadUserLocation();
+  //     }
+  //   };
+
+  //   window.addEventListener('storage', handleStorageChange);
+  //   window.addEventListener('locationChanged', handleLocationChanged);
     
-    // Cleanup
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
+  //   // Cleanup
+  //   return () => {
+  //     window.removeEventListener('storage', handleStorageChange);
+  //     window.removeEventListener('locationChanged', handleLocationChanged);
+  //   };
+  // }, []);
 
   const handleAccountClick = (event) => {
     setAccountAnchorEl(accountAnchorEl ? null : accountButtonRef.current);
   };
 
-  const handleWishlistClick = () => {
-    // Navigate to the wishlist page when wishlist icon is clicked
-    navigate('/wishlist');
-  };
-  
-  const handleWishlistClose = () => {
-    setWishlistAnchorEl(null); // Close wishlist popover
+  const handleAccountClose = () => {
+    setAccountAnchorEl(null);
   };
 
   const openAccount = Boolean(accountAnchorEl);
   const idAccount = openAccount ? 'account-popover' : undefined;
-
-  const openWishlist = Boolean(wishlistAnchorEl);
-  const idWishlist = openWishlist ? 'wishlist-popover' : undefined;
 
   return (
     <div className="header__indicators">
@@ -270,7 +387,12 @@ export const HeaderIndicators = () => {
                 fontStyle: isLoadingLocation ? 'italic' : 'normal'
               }}
             >
-              {isLoadingLocation ? 'Detecting location...' : locationName}
+              {/* {isLoadingLocation ? 'Detecting location...' : locationName}
+              {userLocation && (
+                <span style={{ fontSize: '10px', display: 'block', color: '#999' }}>
+                  ({userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)})
+                </span>
+              )} */}
             </span>
           )}
           {!userLocation && user?.id && (
@@ -281,7 +403,7 @@ export const HeaderIndicators = () => {
           id={idAccount}
           open={openAccount}
           anchorEl={accountAnchorEl}
-          onClose={handleWishlistClose}
+          onClose={handleAccountClose}
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'left',
@@ -291,7 +413,7 @@ export const HeaderIndicators = () => {
             horizontal: 'left',
           }}
         >
-          <AccountMenu anchorEl={accountAnchorEl} handleClose={handleWishlistClose} />
+          <AccountMenu anchorEl={accountAnchorEl} handleClose={handleAccountClose} />
         </Popover>
       </div>
     </div>

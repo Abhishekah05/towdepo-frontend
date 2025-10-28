@@ -471,6 +471,7 @@
   "sidebar.ecommerceAdmin": " Admin ",
   "sidebar.ecommerceAdmin.addProducts": "Add Products",
     "sidebar.ecommerceAdmin.storeManagement": "Store Management",
+    "sidebar.ecommerceAdmin.storeDashboard": "Store Dashboard ",
 
   "sidebar.ecommerceAdmin.productListing": "Product Management",
   "sidebar.invoice": "Invoice",
