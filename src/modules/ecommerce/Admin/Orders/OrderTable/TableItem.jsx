@@ -57,19 +57,19 @@ const TableItem = ({ data, onDeleteOrder }) => {
           {data.orderNumber}
         </Box>
       </StyledTableCell>
-      <StyledTableCell align='left'>{data?.items[0]?.title}</StyledTableCell>
+      <StyledTableCell align='left'>{data?.items?.[0].title}</StyledTableCell>
       <StyledTableCell align='left'>
         {data?.items?.reduce((total, item) => total + item.quantity, 0)}
       </StyledTableCell>
-      <StyledTableCell align='left'>{data.userId.name}</StyledTableCell>
+      <StyledTableCell align='left'>{data.userId?.name}</StyledTableCell>
       <StyledTableCell align='left'>{formattedOrderDate}</StyledTableCell>
-      <StyledTableCell align='left'>{data.totalAmount}</StyledTableCell>
-      <StyledTableCell align='left'>{data.paymentType}</StyledTableCell>
+      <StyledTableCell align='left'>{data?.totalAmount}</StyledTableCell>
+      <StyledTableCell align='left'>{data?.paymentType}</StyledTableCell>
       <StyledTableCell align="left">
         <Box
           sx={{
-            color: getPaymentStatusColor(data.orderStatus),
-            backgroundColor: getPaymentStatusColor(data.orderStatus) + '44', // 44 adds transparency
+            color: getPaymentStatusColor(data?.orderStatus),
+            backgroundColor: getPaymentStatusColor(data?.orderStatus) + '44', // 44 adds transparency
             padding: '3px 5px',
             borderRadius: 1,
             fontSize: 14,
@@ -80,7 +80,7 @@ const TableItem = ({ data, onDeleteOrder }) => {
         </Box>
       </StyledTableCell>
       <TableCell align='right'>
-        <OrderActions id={data.id} onDeleteOrder={onDeleteOrder} />
+        <OrderActions id={data?.id} onDeleteOrder={onDeleteOrder} />
       </TableCell>
     </TableRow>
   );
